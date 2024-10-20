@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'package:calculator/logics/basic_operations.dart';
-import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 
 class HomePage extends StatefulWidget {
@@ -10,151 +9,164 @@ class HomePage extends StatefulWidget {
   State<HomePage> createState() => _HomePageState();
 }
 
-StreamController streamController = StreamController();
+String resultValue = "0";
+TextEditingController textController = TextEditingController();
+StreamController<String> streamControllerString = StreamController<String>();
+StreamController<List<String>> streamControllerList =
+    StreamController<List<String>>();
+List<String> history = [];
 
 class _HomePageState extends State<HomePage> {
-  List<String> list = [];
-  TextEditingController textEditingController = TextEditingController();
+  final _formKey = GlobalKey<FormState>();
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        appBar: AppBar(
-          title: const Text("Home Page"),
-          centerTitle: true,
-        ),
-        body: Column(children: [
-          SizedBox(
-            width: double.infinity,
-            height: 260,
-            child: StreamBuilder(
-              initialData: "WellCome to Calculator",
-              stream: streamController.stream,
-              builder: (context, snapshot) {
-                return (list.isNotEmpty)
-                    ? ListView.builder(
-                        itemBuilder: (context, index) {
-                          return Padding(
-                            padding: const EdgeInsets.only(right: 30),
-                            child: Text(
-                              list[index].toString(),
-                              textAlign: TextAlign.right,
-                              style: const TextStyle(
-                                  fontSize: 18, fontWeight: FontWeight.w300),
-                            ),
-                          );
-                        },
-                        itemCount: list.length,
-                        dragStartBehavior: DragStartBehavior.down,
-                      )
-                    : const Center(child: Text("WellCome to Calculator"));
-              },
-            ),
-          ),
-          const SizedBox(
-            height: 10,
-          ),
-          ElevatedButton(
-              onPressed: () {
-                list.clear();
-                textEditingController.value = TextEditingValue.empty;
-                streamController.add(0);
-              },
-              child: const Text("Clean")),
-          const SizedBox(
-            height: 10,
-          ),
-          Form(
-              child: SizedBox(
-            width: 380,
-            child: TextFormField(
-              controller: textEditingController,
-              textAlign: TextAlign.end,
-              keyboardType: TextInputType.none,
-              showCursor: true,
-              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-              decoration: const InputDecoration(
-                  border: OutlineInputBorder(
-                      borderRadius: BorderRadius.all(Radius.circular(20)))),
-              autovalidateMode: AutovalidateMode.onUserInteraction,
-              validator: (value) {
-                bool isEqual = false;
-                if (value == null || value.isEmpty) {
-                  return null;
-                }
-                value = value.trim();
-                if (!RegExp(r'^-?(\d+(\.\d+)?)([+\-*/](\d+(\.\d+)?))*$')
-                    .hasMatch(value)) {
-                  if (RegExp(r'=$').hasMatch(value)) {
-                    isEqual = true;
-                  } else {
-                    return 'Invalid expression.';
-                  }
-                }
-                // valid
-                var inputsValue = textEditingController.text.toString();
-                var outputValues = calculationFunction(inputsValue);
-                textEditingController.text = outputValues;
-                if (isEqual) {
-                  list.add(outputValues);
-                  if (list.length > 10) {
-                    list.removeAt(0);
-                  }
-                }
-
-                return null;
-              },
-            ),
-          )),
-          KeyBoardLayout(textEditingController: textEditingController)
-        ]));
-  }
-}
-
-class KeyBoardLayout extends StatelessWidget {
-  final TextEditingController textEditingController;
-  const KeyBoardLayout({super.key , required this.textEditingController});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      color: Colors.grey,
-      child: Column(
+      appBar: AppBar(
+        title: const Text("Home Page."),
+        centerTitle: true,
+        backgroundColor: Colors.blue,
+      ),
+      body: Column(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Row(
-            children: [
-              elevatedButtonFunction("+", textEditingController),
-              elevatedButtonFunction("1", textEditingController),
-              elevatedButtonFunction("2", textEditingController),
-              elevatedButtonFunction("3", textEditingController),
-              elevatedButtonFunction("%", textEditingController),
-            ],
+          SizedBox(
+            width: 300,
+            height: 300,
+            child: StreamBuilder<List<String>>(
+              stream: streamControllerList.stream, // Replace with your stream
+              builder: (context, AsyncSnapshot<List<String>> snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(
+                    child: Text(
+                      "WELCOME",
+                      style: TextStyle(fontSize: 32, color: Colors.blue),
+                    ),
+                  );
+                } else if (snapshot.hasData) {
+                  List<String> items = snapshot.data ?? [];
+                  return (items.isNotEmpty )
+                      ? ListView.builder(
+                          itemCount: items.length,
+                          itemBuilder: (context, index) {
+                            return Align(
+                              alignment: Alignment.bottomRight,
+                              child: Text(
+                                items[index],
+                              ),
+                            );
+                          },
+                        )
+                      :const Center(child:  Text(
+                          "WELCOME",
+                          style: TextStyle(fontSize: 32, color: Colors.blue),
+                        ),);
+                } else {
+                  return const Text('No data available'); // Handle no data
+                }
+              },
+            ),
           ),
-          Row(
-            children: [
-              elevatedButtonFunction("-", textEditingController),
-              elevatedButtonFunction("4", textEditingController),
-              elevatedButtonFunction("5", textEditingController),
-              elevatedButtonFunction("6", textEditingController),
-              elevatedButtonFunction("_", textEditingController),
-            ],
+          SizedBox(
+            width: 300,
+            child: StreamBuilder<String>(
+              stream: streamControllerString.stream,
+              initialData: "",
+              builder: (context, snapshot) {
+                return Align(
+                  alignment: Alignment.bottomRight,
+                  child: Text(
+                    snapshot.data.toString(),
+                  ),
+                );
+              },
+            ),
           ),
-          Row(
-            children: [
-              elevatedButtonFunction("/", textEditingController),
-              elevatedButtonFunction("7", textEditingController),
-              elevatedButtonFunction("8", textEditingController),
-              elevatedButtonFunction("9", textEditingController),
-              elevatedButtonFunction(".", textEditingController),
-            ],
+          Padding(
+              padding: const EdgeInsets.all(10.0),
+              child: Form(
+                key: _formKey,
+                child: TextFormField(
+                  style: const TextStyle(fontSize: 24),
+                  keyboardType: TextInputType.none,
+                  controller: textController,
+                  decoration: InputDecoration(
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                  ),
+                  autovalidateMode: AutovalidateMode.onUserInteraction,
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'write some think.';
+                    }
+                    if (!RegExp(
+                            r'^[\+\-]?(\d+(\.\d+)?)([\*\+\-\/%]\d+(\.\d+)?)*$')
+                        .hasMatch(value)) {
+                      if (RegExp(r'[\+\-\*\/%]{2,}').hasMatch(value)) {
+                        return 'No consecutive operators allowed.';
+                      } else if (RegExp(r'\d*\.\d*\.\d*').hasMatch(value)) {
+                        return 'A number can only contain one decimal point.';
+                      } else {
+                        return 'Invalid format.';
+                      }
+                    }
+                    mainFunction();
+                    return null; // Input is valid
+                  },
+                ),
+              )),
+          const SizedBox(
+            height: 20,
           ),
-          Row(
-            children: [
-              elevatedButtonFunction("*", textEditingController),
-              elevatedButtonFunction("0", textEditingController),
-              elevatedButtonFunction("py", textEditingController),
-              elevatedButtonFunction("SqR", textEditingController),
-              elevatedButtonFunction("=", textEditingController),
-            ],
+          Container(
+            width: double.infinity,
+            height: 200,
+            color: Colors.grey,
+            child: const Column(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  children: [
+                    CustomizedButtons(label: "*"),
+                    CustomizedButtons(label: "1"),
+                    CustomizedButtons(label: "2"),
+                    CustomizedButtons(label: "3"),
+                    CustomizedButtons(label: "C"),
+                  ],
+                ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  children: [
+                    CustomizedButtons(label: "/"),
+                    CustomizedButtons(label: "4"),
+                    CustomizedButtons(label: "5"),
+                    CustomizedButtons(label: "6"),
+                    CustomizedButtons(label: "_"),
+                  ],
+                ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  children: [
+                    CustomizedButtons(label: "+"),
+                    CustomizedButtons(label: "7"),
+                    CustomizedButtons(label: "8"),
+                    CustomizedButtons(label: "9"),
+                    CustomizedButtons(label: "R"),
+                  ],
+                ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  children: [
+                    CustomizedButtons(label: "-"),
+                    CustomizedButtons(label: "0"),
+                    CustomizedButtons(label: "00"),
+                    CustomizedButtons(label: "."),
+                    CustomizedButtons(label: "="),
+                  ],
+                )
+              ],
+            ),
           ),
         ],
       ),
@@ -162,11 +174,28 @@ class KeyBoardLayout extends StatelessWidget {
   }
 }
 
-elevatedButtonFunction(
-    String clickValue, TextEditingController textEditingController) {
-  return ElevatedButton(
+class CustomizedButtons extends StatelessWidget {
+  final String label;
+  final double fontSize;
+  final Color fontColor;
+  const CustomizedButtons(
+      {super.key,
+      required this.label,
+      this.fontSize = 18,
+      this.fontColor = Colors.brown});
+
+  @override
+  Widget build(BuildContext context) {
+    return ElevatedButton(
       onPressed: () {
-        textEditingController.text = clickValue;
+        buttonsFunctional(label);
       },
-      child: Text(clickValue));
+      child: Center(
+        child: Text(
+          " $label ",
+          style: TextStyle(fontSize: 18, color: fontColor),
+        ),
+      ),
+    );
+  }
 }

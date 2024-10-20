@@ -1,6 +1,28 @@
 import 'package:calculator/screens_pages/home_page.dart';
 
-List<String> listFromString(String input) {
+String inputValues = "";
+buttonsFunctional(String label) {
+  if (label == "C") {
+    inputValues = "";
+  } else if (label == "R") {
+    inputValues = "";
+    history.clear();
+    textController.text = "";
+    streamControllerList.add(history);
+    streamControllerString.add("");
+  } else if (label == "_" && inputValues.isNotEmpty) {
+    inputValues = inputValues.substring(0, inputValues.length - 1);
+  } else if (label == "=") {
+    mainFunction(isTrue: true);
+    streamControllerList.add(history);
+  } else if (label != "_") {
+    inputValues += label;
+  }
+
+  textController.text = inputValues;
+}
+
+List<String> stringToList(String input) {
   RegExp regex = RegExp(r'([+\-\*\/]|\d+\.\d+|\d+)');
   List<String> result =
       regex.allMatches(input).map((match) => match.group(0)!).toList();
@@ -45,8 +67,20 @@ String calculateResult(List<String> list) {
   return list[0].toString();
 }
 
-String calculationFunction(String input) {
-  String temp = calculateResult(listFromString(input));
-  streamController.add(temp);
-  return temp;
+mainFunction({bool isTrue = false}) {
+  var temp = calculateResult(stringToList(inputValues)).toString();
+  streamControllerString.add(temp);
+  if (isTrue) {
+    inputValues = temp.toString();
+    if (history.isNotEmpty) {
+      if (history.length > 15) {
+        history.removeAt(0);
+      } else if (history.last == temp) {
+      } else {
+        history.add(temp);
+      }
+    } else {
+      history.add(temp);
+    }
+  }
 }
