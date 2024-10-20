@@ -50,7 +50,3 @@ String calculationFunction(String input) {
   streamController.add(temp);
   return temp;
 }
-
-buttonClicked() {
-  inputsValue = "";
-}
